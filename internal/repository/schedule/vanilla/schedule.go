@@ -29,21 +29,26 @@ func (s *scheduleVanillaRepository) GetSchedulesByProductID(
 
 	query := `
 		SELECT 
-			product_code,
-			schedule_code,
-			schedule_name,
-			start_date,
-			status,
-			address,
-			detail
+			pks.product_code,
+			pks.schedule_code,
+			pks.schedule_name,
+			pks.status,
+			pks.address,
+			pks.detail
 		FROM 
-			product_kpk_schedule
+			product_kpk_schedule pks
 		WHERE 
-			status <> $1 AND
-			product_id = $2
+			pks.status <> $1 AND
+			pks.product_id = $2 AND
+			pks.expired_date > NOW()
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, constant.ScheduleInactive, productID)
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		constant.ScheduleInactive,
+		productID,
+	)
 	if err != nil {
 		return result, nil
 	}
@@ -56,7 +61,6 @@ func (s *scheduleVanillaRepository) GetSchedulesByProductID(
 			&s.ProductCode,
 			&s.ScheduleCode,
 			&s.ScheduleName,
-			&s.StartDate,
 			&s.Status,
 			&s.Address,
 			&s.Details,

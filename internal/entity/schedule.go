@@ -2,7 +2,6 @@ package entity
 
 import (
 	"encoding/json"
-	"time"
 )
 
 type Schedule struct {
@@ -10,8 +9,6 @@ type Schedule struct {
 	ScheduleCode string          `db:"schedule_code"`
 	ScheduleName string          `db:"schedule_name"`
 	Status       int             `db:"status"`
-	StartDate    time.Time       `db:"start_date"`
-	ExpiredDate  time.Time       `db:"expired_date"`
 	Address      string          `db:"address"`
 	Details      ScheduleDetails `db:"detail"`
 }
