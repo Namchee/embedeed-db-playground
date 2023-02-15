@@ -1,31 +1,36 @@
-package vanilla
+package sqlx
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"os"
 	"testing"
 
 	"github.com/Namchee/ramsql-playground/internal/entity"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 
 	_ "github.com/lib/pq"
 )
 
 var (
-	db *sql.DB
+	db *sqlx.DB
 )
 
 func TestMain(m *testing.M) {
-	postgres := embeddedpostgres.NewDatabase()
-	err := postgres.Start()
+	pg := embeddedpostgres.NewDatabase(
+		embeddedpostgres.DefaultConfig().Port(5173),
+	)
+	err := pg.Start()
 	if err != nil {
 		log.Fatalln("failed to start in-memory database: ", err)
 	}
 
-	db, err = sql.Open("postgres", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
+	db, err = sqlx.Connect(
+		"postgres",
+		"postgres://postgres:postgres@localhost:5173/postgres?sslmode=disable",
+	)
 	if err != nil {
 		log.Fatalln("failed to connect to in-memory database: ", err)
 	}
@@ -34,7 +39,7 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
-	err = postgres.Stop()
+	err = pg.Stop()
 	if err != nil {
 		log.Fatalln("failed to stop in-memory database: ", err)
 	}
@@ -42,15 +47,13 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestNewScheduleVanillaDB(t *testing.T) {
+func TestNewScheduleSQLXDB(t *testing.T) {
 	assert.NotPanics(t, func() {
-		NewScheduleVanillaDB(db)
+		NewScheduleSQLXDB(db)
 	})
 }
 
-func TestScheduleVanillaRepository_GetSchedulesByProductID(
-	t *testing.T,
-) {
+func TestScheduleSQLXRepository_GetSchedulesByProductID(t *testing.T) {
 	want := []entity.Schedule{
 		{
 			ProductCode:  "product-code",
@@ -62,7 +65,7 @@ func TestScheduleVanillaRepository_GetSchedulesByProductID(
 		},
 	}
 
-	repo := &scheduleVanillaRepository{db: db}
+	repo := &scheduleSQLXRepository{db: db}
 	got, err := repo.GetSchedulesByProductID(context.Background(), 5)
 
 	assert.Equal(t, want, got)
@@ -169,7 +172,7 @@ func seedDatabase() {
 			1,
 			'a',
 			'2016-06-22 19:10:25-07',
-			'2024-06-23 19:10:25-07',
+			'2024-06-23 19:10:25-00',
 			1
 		)`,
 		`INSERT INTO product_kpk_schedule
